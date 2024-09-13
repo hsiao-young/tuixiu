@@ -1,0 +1,44 @@
+from datetime import datetime, timedelta
+
+def calculate_retirement_date(birth_date_str, gender, original_retirement_age):
+    # 将输入的出生日期字符串转换为日期对象
+    birth_date = datetime.strptime(birth_date_str, '%Y-%m-%d')
+    
+    # 确定延迟退休的起始日期
+    policy_start_date = datetime(2025, 1, 1)
+    
+    # 原法定退休年龄
+    original_retirement_date = birth_date.replace(year=birth_date.year + original_retirement_age)
+    
+    # 如果在2025年1月1日之前已达到退休年龄，则不受新政策影响
+    if original_retirement_date < policy_start_date:
+        return original_retirement_date.strftime('%Y-%m-%d')
+    
+    # 根据性别和原退休年龄，确定延迟规则
+    if gender == '男' or (gender == '女' and original_retirement_age == 55):
+        # 男性和原退休年龄为55周岁的女性
+        delay_interval = timedelta(days=4*30)  # 每4个月
+        delay_amount = timedelta(days=30)      # 延迟1个月
+        max_retirement_age = 63 if gender == '男' else 58
+    elif gender == '女' and original_retirement_age == 50:
+        # 原退休年龄为50周岁的女性
+        delay_interval = timedelta(days=2*30)  # 每2个月
+        delay_amount = timedelta(days=30)      # 延迟1个月
+        max_retirement_age = 55
+    else:
+        # 其他情况，按照原退休年龄计算
+        return original_retirement_date.strftime('%Y-%m-%d')
+    
+    # 计算延迟的总月份数
+    months_after_policy = ((original_retirement_date - policy_start_date).days) // 30
+    delays = months_after_policy // (delay_interval.days // 30) * (delay_amount.days // 30)
+    
+    # 计算新的退休年龄，但不超过最大退休年龄
+    new_retirement_age = original_retirement_age + delays // 12
+    if new_retirement_age > max_retirement_age:
+        new_retirement_age = max_retirement_age
+    
+    # 计算新的退休日期
+    new_retirement_date = birth_date.replace(year=birth_date.year + new_retirement_age)
+    
+    return new_retirement_date.strftime('%Y-%m-%d')
