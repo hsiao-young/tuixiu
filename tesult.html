@@ -1,0 +1,15 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <title>退休日期结果</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body>
+    <div class="container">
+        <h1>您的退休日期为：</h1>
+        <p class="result">{{ retirement_date }}</p>
+        <a href="{{ url_for('index') }}">重新计算</a>
+    </div>
+</body>
+</html>
