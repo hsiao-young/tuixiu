@@ -1,15 +1,37 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="zh-CN">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>My First Web Page</title>
-    <link rel="stylesheet" href="style.css">
+    <title>退休日期计算器</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
 </head>
 <body>
-    <h1>Welcome to My Web Page</h1>
-    <p>This is a simple static web page.</p>
-    <button onclick="greet()">Click Me</button>
-    <script src="script.js"></script>
+    <div class="container">
+        <h1>退休日期计算器</h1>
+        {% if error %}
+            <p class="error">{{ error }}</p>
+        {% endif %}
+        <form method="POST">
+            <label for="birth_date">出生日期（YYYY-MM-DD）：</label>
+            <input type="date" id="birth_date" name="birth_date" required>
+
+            <label for="gender">性别：</label>
+            <select id="gender" name="gender" required>
+                <option value="">请选择</option>
+                <option value="男">男</option>
+                <option value="女">女</option>
+            </select>
+
+            <label for="original_retirement_age">原法定退休年龄：</label>
+            <select id="original_retirement_age" name="original_retirement_age" required>
+                <option value="">请选择</option>
+                <option value="50">50岁（女工人）</option>
+                <option value="55">55岁（女干部）</option>
+                <option value="60">60岁（男）</option>
+            </select>
+
+            <button type="submit">计算退休日期</button>
+        </form>
+    </div>
 </body>
 </html>
