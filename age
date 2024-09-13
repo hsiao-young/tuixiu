@@ -1,19 +1,29 @@
+from flask import Flask, render_template, request
 from datetime import datetime, timedelta
 
+app = Flask(__name__)
+
 def calculate_retirement_date(birth_date_str, gender, original_retirement_age):
-    # 将输入的出生日期字符串转换为日期对象
-    birth_date = datetime.strptime(birth_date_str, '%Y-%m-%d')
-    
+    try:
+        # 将输入的出生日期字符串转换为日期对象
+        birth_date = datetime.strptime(birth_date_str, '%Y-%m-%d')
+    except ValueError:
+        return "出生日期格式错误，请使用 YYYY-MM-DD 格式。"
+
     # 确定延迟退休的起始日期
     policy_start_date = datetime(2025, 1, 1)
-    
+
     # 原法定退休年龄
-    original_retirement_date = birth_date.replace(year=birth_date.year + original_retirement_age)
-    
+    try:
+        original_retirement_date = birth_date.replace(year=birth_date.year + original_retirement_age)
+    except ValueError:
+        # 处理2月29日的情况
+        original_retirement_date = birth_date + (datetime(birth_date.year + original_retirement_age, 3, 1) - datetime(birth_date.year, birth_date.month, birth_date.day))
+
     # 如果在2025年1月1日之前已达到退休年龄，则不受新政策影响
     if original_retirement_date < policy_start_date:
         return original_retirement_date.strftime('%Y-%m-%d')
-    
+
     # 根据性别和原退休年龄，确定延迟规则
     if gender == '男':
         delay_interval_months = 4   # 每4个月
@@ -32,30 +42,51 @@ def calculate_retirement_date(birth_date_str, gender, original_retirement_age):
     else:
         # 其他情况，按照原退休年龄计算
         return original_retirement_date.strftime('%Y-%m-%d')
-    
+
     # 计算从政策实施到原退休日期的总月份数
     months_after_policy = (original_retirement_date.year - policy_start_date.year) * 12 + (original_retirement_date.month - policy_start_date.month)
-    
+
     # 计算需要延迟的月份数
     delays = (months_after_policy // delay_interval_months) * delay_amount_months
-    
+
     # 计算新的退休日期
     new_retirement_date = original_retirement_date + timedelta(days=delays * 30)
-    
+
     # 计算新的退休年龄
     new_retirement_age = (new_retirement_date - birth_date).days // 365.25
-    
+
     # 确保退休年龄不超过目标退休年龄
     if new_retirement_age > max_retirement_age:
-        new_retirement_date = birth_date.replace(year=birth_date.year + max_retirement_age)
-    
+        try:
+            new_retirement_date = birth_date.replace(year=birth_date.year + max_retirement_age)
+        except ValueError:
+            new_retirement_date = birth_date + (datetime(birth_date.year + max_retirement_age, 3, 1) - datetime(birth_date.year, birth_date.month, birth_date.day))
+
     return new_retirement_date.strftime('%Y-%m-%d')
 
-# 测试示例
+@app.route('/', methods=['GET', 'POST'])
+def index():
+    if request.method == 'POST':
+        birth_date = request.form.get('birth_date')
+        gender = request.form.get('gender')
+        original_retirement_age = request.form.get('original_retirement_age')
+
+        # 输入验证
+        if not birth_date or not gender or not original_retirement_age:
+            error = "请填写所有字段。"
+            return render_template('index.html', error=error)
+
+        try:
+            original_retirement_age = int(original_retirement_age)
+            if original_retirement_age not in [50, 55, 60]:
+                raise ValueError
+        except ValueError:
+            error = "原法定退休年龄必须为50、55或60。"
+            return render_template('index.html', error=error)
+
+        retirement_date = calculate_retirement_date(birth_date, gender, original_retirement_age)
+        return render_template('result.html', retirement_date=retirement_date)
+    return render_template('index.html')
+
 if __name__ == '__main__':
-    birth_date = input('请输入出生日期（格式：YYYY-MM-DD）：')
-    gender = input('请输入性别（男/女）：')
-    original_retirement_age = int(input('请输入原法定退休年龄（50或55或60）：'))
-    
-    retirement_date = calculate_retirement_date(birth_date, gender, original_retirement_age)
-    print(f'您的退休日期为：{retirement_date}')
+    app.run(debug=True)
